@@ -150,3 +150,11 @@ function Ferret:table_random(subject)
     local key = keys[math.random(1, #keys)]
     return subject[key]
 end
+
+function Ferret:table_first(subject)
+    for _, value in pairs(subject) do
+        return value
+    end
+
+    return nil
+end
