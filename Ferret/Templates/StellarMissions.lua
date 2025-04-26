@@ -26,7 +26,26 @@ function StellarMissions:new()
 
     self.cosmic_exploration = CosmicExploration()
 
+    self.wait_timers = {
+        pre_open_mission_list = 0,
+        post_open_mission_list = 0,
+        post_mission_start = 0,
+        post_mission_abandon = 0,
+    }
+
     self:init()
+end
+
+function StellarMissions:slow_mode()
+    self.wait_timers = {
+        pre_open_mission_list = 1,
+        post_open_mission_list = 1,
+        post_mission_start = 1,
+        post_mission_abandon = 1,
+    }
+
+    Mission.wait_timers.pre_synthesize = 1
+    Mission.wait_timers.post_synthesize = 1
 end
 
 function StellarMissions:setup()
@@ -70,7 +89,9 @@ function StellarMissions:loop()
 
     WKSHud:wait_until_ready()
 
+    Ferret:wait(self.wait_timers.pre_open_mission_list)
     WKSMission:open_basic_missions()
+    Ferret:wait(self.wait_timers.post_open_mission_list)
 
     local available_missions = WKSMission:get_available_missions()
     local mission_list = self.mission_list:get_overlap(available_missions)
@@ -93,8 +114,9 @@ function StellarMissions:loop()
         Logger:debug('mission: ' .. mission:to_string())
 
         mission:start()
+        Ferret:wait(self.wait_timers.post_mission_start)
         mission:abandon()
-        Ferret:wait(1)
+        Ferret:wait(self.wait_timers.post_mission_abandon)
         return
     else
         Logger:debug('Selecting mission to run')
@@ -113,8 +135,11 @@ function StellarMissions:loop()
 
         Logger:debug('mission: ' .. mission:to_string())
         mission:start()
+        Ferret:wait(self.wait_timers.post_mission_start)
         WKSRecipeNotebook:wait_until_ready()
         self:emit(Hooks.PRE_CRAFT)
+
+        WKSHud:open_mission_menu()
 
         mission:handle()
 
